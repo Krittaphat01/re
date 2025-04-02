@@ -32,6 +32,7 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  image: string; // Add image property
 }
 
 const Store: React.FC = () => {
@@ -132,12 +133,12 @@ const Store: React.FC = () => {
       {/* OrderModal Component */}
       <OrderModal open={modalOpen} onClose={() => setModalOpen(false)} />
 
-      <PokemonCardSearch addToCart={(card) => setCartItems((prev) => [...prev, { id: card.id, name: card.name, price: card.tcgplayer.prices?.normal?.market || 0, quantity: 1 }])} />
+      <PokemonCardSearch addToCart={(card) => setCartItems((prev) => [...prev, { id: card.id, name: card.name, price: card.tcgplayer.prices?.normal?.market || 0, quantity: 1, image: card.images.large }])} />
 
       <Grid container spacing={3} justifyContent="center">
         {cards.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage).map((card) => (
           <Grid item xs={6} sm={3} md={2} lg={2} key={card.id}>
-            <ProductCard cardId={card.id} card={card} addToCart={(card) => setCartItems((prev) => [...prev, { id: card.id, name: card.name, price: card.tcgplayer.prices?.normal?.market || 0, quantity: 1 }])} />
+            <ProductCard cardId={card.id} card={card} addToCart={(card) => setCartItems((prev) => [...prev, { id: card.id, name: card.name, price: card.tcgplayer.prices?.normal?.market || 0, quantity: 1, image: card.images.large }])} />
           </Grid>
         ))}
       </Grid>
