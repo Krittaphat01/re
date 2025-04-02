@@ -2,28 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardMedia, Typography, Box, Button, CircularProgress, Alert } from '@mui/material';
 import axios from 'axios';
 import LocalMallOutlinedIcon from '@mui/icons-material/LocalMallOutlined';
+
 interface CardType {
   id: string;
   name: string;
-  images: {
-    large: string;
-  };
-  tcgplayer: {
-    prices?: {
-      normal?: { market: number };
-    };
-  };
+  images: { large: string };
+  price: number;
+  quantity?: number;
 }
 
 interface ProductCardProps {
   cardId: string;
   addToCart: (card: CardType) => void;
 }
-interface ProductCardProps {
-  card: CardType;
-  addToCart: (card: CardType) => void;
-}
-
 
 const ProductCard: React.FC<ProductCardProps> = ({ cardId, addToCart }) => {
   const [cardData, setCardData] = useState<CardType | null>(null);
@@ -39,31 +30,31 @@ const ProductCard: React.FC<ProductCardProps> = ({ cardId, addToCart }) => {
       }
 
       try {
-        // เรียก API เพื่อดึงข้อมูลการ์ดโดยใช้ API Key
         const response = await axios.get(`https://api.pokemontcg.io/v2/cards/${cardId}`, {
           headers: { "X-api-key": "bffbe7c7-cf5c-4854-9b63-b51f85a3616c" }
         });
 
         const card = response.data.data;
-        console.log("Fetched card data:", card); 
-        const cardInfo: CardType = {
+
+        // คำนวณราคาการ์ด
+        const normalPrice = card?.tcgplayer?.prices?.normal?.market ?? 0;
+        const holofoilPrice = card?.tcgplayer?.prices?.holofoil?.market ?? 0;
+        const reverseHolofoilPrice = card?.tcgplayer?.prices?.reverseHolofoil?.market ?? 0;
+
+        const price = Math.max(normalPrice, holofoilPrice, reverseHolofoilPrice);
+
+        setCardData({
           id: card.id,
           name: card.name,
-          images: {
-            large: card.images.large
-          },
-          tcgplayer: {
-            prices: card.tcgplayer?.prices 
-          }
-        };
-
-        setCardData(cardInfo); // เก็บข้อมูลการ์ดใน state
+          images: { large: card.images.large },
+          price, // กำหนดราคาที่ถูกต้อง
+        });
       } catch (error) {
-        if (axios.isAxiosError(error) && error.response) {
-          setError(`Error: ${error.response.status} - ${error.response.statusText}`);
-        } else {
-          setError('Failed to load card data. Please try again later.');
-        }
+        setError(
+          axios.isAxiosError(error) && error.response
+            ? `Error: ${error.response.status} - ${error.response.statusText}`
+            : 'Failed to load card data. Please try again later.'
+        );
       } finally {
         setLoading(false);
       }
@@ -76,35 +67,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ cardId, addToCart }) => {
   if (error) return <Alert severity="error" sx={{ margin: '20px auto', width: '80%' }}>{error}</Alert>;
   if (!cardData) return <Alert severity="warning" sx={{ margin: '20px auto', width: '80%' }}>Card not found</Alert>;
 
-  // ตรวจสอบว่ามีราคาหรือไม่ และแสดงผล
-  const price = cardData.tcgplayer?.prices?.normal?.market;
-  const displayPrice = price !== undefined ? `$${price.toFixed(2)}` : 'Price not available';
-  
-
   return (
-    <Card sx={{ maxWidth: 250, backgroundColor: 'transparent', boxShadow: 'none', padding: '0px', position: 'relative', textAlign: 'center' }}>
+    <Card sx={{ maxWidth: 250, backgroundColor: 'transparent', boxShadow: 'none', textAlign: 'center' }}>
       <CardMedia
         component="img"
         image={cardData.images.large}
         alt={cardData.name}
-        sx={{
-          width: '100%',
-          height: 140,
-          objectFit: 'contain',
-          position: 'relative',
-          top: 25,
-          margin: '0 auto',
-          zIndex: 1,
-        }}
+        sx={{ width: '100%', height: 140, objectFit: 'contain', marginTop: '25px' }}
       />
       <Box sx={{
-        position: 'relative',
         backgroundColor: '#0b0c16',
         borderRadius: '16px',
-        padding: '1px',
+        padding: '8px',
         color: 'white',
         textAlign: 'center',
-        marginTop: '1px',
         width: '160px',
         height: '170px',
         display: 'flex',
@@ -112,11 +88,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ cardId, addToCart }) => {
         justifyContent: 'space-between',
         margin: '0 auto',
       }}>
-        <Typography variant="body2" component="div" sx={{ fontWeight: 'bold', marginBottom: '0px', marginTop: "25px" }}>
+        <Typography variant="body2" sx={{ fontWeight: 'bold', marginTop: "25px" }}>
           {cardData.name}
         </Typography>
-        <Typography variant="caption" sx={{ color: 'lightgray', marginTop: '0', marginBottom: '2px' }}>
-          {displayPrice} {/* แสดงราคาหรือข้อความ "Price not available" */}
+        <Typography variant="caption" sx={{ color: 'lightgray' }}>
+          {cardData.price > 0 ? `$${cardData.price.toFixed(2)}` : 'Price not available'}
         </Typography>
 
         <Button
@@ -125,15 +101,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ cardId, addToCart }) => {
           size="small"
           sx={{
             color: 'white',
-            marginBottom: '10px',
             backgroundColor: '#4F4F4F',
             opacity: 0.7,
-            '&:hover': {
-              backgroundColor: '#3333FF',
-              opacity: 1,
-            },
+            '&:hover': { backgroundColor: '#3333FF', opacity: 1 },
           }}
-          onClick={() => addToCart(cardData)} // ส่ง cardData ไปยัง addToCart
+          onClick={() => addToCart({ ...cardData, quantity: 1 })}
         >
           <LocalMallOutlinedIcon sx={{ marginRight: '8px' }} />
           Add to Cart
