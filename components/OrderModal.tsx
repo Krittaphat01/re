@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
-import { Modal, Box, Typography, Button, List, ListItem, ListItemText, CircularProgress, Divider } from '@mui/material';
+import { Modal, Box, Typography, Button, List, ListItem, ListItemText, CircularProgress, Divider, Chip } from '@mui/material';
 import { auth, db } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
@@ -17,10 +18,12 @@ interface Order {
     name: string;
     phone: string;
     address: string;
+    status?: string; 
   };
   items: OrderItem[];
   createdAt: Date;
-  status?: string; // เพิ่ม status เป็น optional field
+  // เพิ่ม status เป็น optional field
+  total: number; // Add total property to the Order interface
 }
 
 const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, onClose }) => {
@@ -47,13 +50,16 @@ const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
     const fetchOrders = async () => {
       try {
         const ordersRef = collection(db, 'orders');
-        // เปลี่ยนจาก where('email', ...) เป็น where('customer.email', ...) ตามโครงสร้างข้อมูลจริง
         const q = query(ordersRef, where('customer.email', '==', userEmail));
         const querySnapshot = await getDocs(q);
-        
+    
         const ordersData: Order[] = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
+    
+          // ตรวจสอบสถานะจาก Firestore และใช้ค่า 'ไม่พบ' หากสถานะไม่มีค่า
+          const status = data.status && data.status !== '' ? data.status : 'ไม่พบ';
+    
           ordersData.push({
             id: doc.id,
             customer: {
@@ -61,8 +67,9 @@ const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
               name: data.customer.name,
               phone: data.customer.phone,
               address: data.customer.address,
+              status: status,
             },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            
             items: data.items.map((item: any) => ({
               id: item.id,
               name: item.name,
@@ -70,11 +77,12 @@ const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
               quantity: item.quantity,
             })),
             createdAt: data.createdAt?.toDate() || new Date(),
-            status: data.status || 'Processing', // Default status ถ้าไม่มี
+             // ใช้สถานะที่ตรวจสอบแล้ว
+            total: data.items.reduce((total: number, item: any) => total + item.price * item.quantity, 0), // คำนวณราคารวม
           });
         });
-
-        // เรียงลำดับตามวันที่สร้าง (ใหม่สุดอยู่บน)
+    
+        // เรียงลำดับตามวันที่ล่าสุด
         ordersData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
         setOrders(ordersData);
       } catch (err) {
@@ -84,7 +92,8 @@ const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
         setLoading(false);
       }
     };
-
+    
+    
     fetchOrders();
   }, [userEmail]);
 
@@ -141,17 +150,23 @@ const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
                 <strong>Date:</strong> {order.createdAt.toLocaleDateString()}
               </Typography>
             </Box>
-            
+
             <Typography variant="subtitle1" mb={1}>
-              <strong>Status:</strong> {order.status}
+              <strong>Status:</strong>
+              {/* ใช้สถานะจาก Firestore โดยตรง */}
+              <Chip
+                label={order.customer.status}
+                color={order.customer.status ? 'success' : 'default'} // ใช้สีเขียวถ้ามีสถานะ
+                sx={{ ml: 1, fontWeight: 'bold' }}
+              />
             </Typography>
-            
+
             <Divider sx={{ my: 1 }} />
-            
+
             <Typography variant="subtitle1" gutterBottom>
               <strong>Items:</strong>
             </Typography>
-            
+
             <List dense>
               {order.items.map((item, index) => (
                 <ListItem key={`${item.id}-${index}`} sx={{ py: 0.5 }}>
@@ -163,9 +178,9 @@ const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
                 </ListItem>
               ))}
             </List>
-            
+
             <Divider sx={{ my: 1 }} />
-            
+
             <Box display="flex" justifyContent="space-between">
               <Typography variant="subtitle1">
                 <strong>Shipping to:</strong> {order.customer.address}
@@ -178,9 +193,9 @@ const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
         ))}
 
         <Box display="flex" justifyContent="flex-end" mt={2}>
-          <Button 
-            onClick={onClose} 
-            variant="contained" 
+          <Button
+            onClick={onClose}
+            variant="contained"
             color="primary"
             sx={{ borderRadius: 2 }}
           >
