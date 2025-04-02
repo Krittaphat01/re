@@ -1,8 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
-import { 
-  Container, Grid, Typography, Box, Pagination, 
-  IconButton,  CircularProgress, Menu, MenuItem 
-} from '@mui/material';
+import { Container, Grid, Typography, Box, Pagination, IconButton, CircularProgress, Menu, MenuItem, Select, MenuItem as MuiMenuItem, FormControl, InputLabel } from '@mui/material';
 import axios from 'axios';
 import LocalMallOutlinedIcon from '@mui/icons-material/LocalMallOutlined';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -25,6 +23,11 @@ interface CardType {
       normal?: { market: number };
     };
   };
+  set: {
+    id: string;
+  };
+  rarity: string;
+  types: string[];
 }
 
 interface CartItem {
@@ -37,6 +40,9 @@ interface CartItem {
 
 const Store: React.FC = () => {
   const [cards, setCards] = useState<CardType[]>([]);
+  const [cardSets, setCardSets] = useState<any[]>([]); // State for sets
+  const [rarities, setRarities] = useState<any[]>([]); // State for rarities
+  const [types, setTypes] = useState<any[]>([]); // State for types
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -45,6 +51,10 @@ const Store: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
+
+  const [selectedSet, setSelectedSet] = useState<string | ''>(''); // State for selected set
+  const [selectedRarity, setSelectedRarity] = useState<string | ''>(''); // State for selected rarity
+  const [selectedType, setSelectedType] = useState<string | ''>(''); // State for selected type
 
   // ตรวจสอบสถานะผู้ใช้ ถ้าไม่ได้ล็อกอินให้ไปที่หน้า Login
   useEffect(() => {
@@ -70,6 +80,36 @@ const Store: React.FC = () => {
       }
     };
 
+    const fetchCardSets = async () => {
+      try {
+        const response = await axios.get('https://api.pokemontcg.io/v2/sets', { headers: { "X-api-key": "bffbe7c7-cf5c-4854-9b63-b51f85a3616c" } });
+        setCardSets(response.data.data);
+      } catch (error) {
+        console.error('Error fetching card sets:', error);
+      }
+    };
+
+    const fetchRarities = async () => {
+      try {
+        const response = await axios.get('https://api.pokemontcg.io/v2/rarities', { headers: { "X-api-key": "bffbe7c7-cf5c-4854-9b63-b51f85a3616c" } });
+        setRarities(response.data.data.map((item: string) => ({ name: item })));
+      } catch (error) {
+        console.error('Error fetching rarities:', error);
+      }
+    };
+
+    const fetchTypes = async () => {
+      try {
+        const response = await axios.get('https://api.pokemontcg.io/v2/types', { headers: { "X-api-key": "bffbe7c7-cf5c-4854-9b63-b51f85a3616c" } });
+        setTypes(response.data.data.map((item: string) => ({ name: item })));
+      } catch (error) {
+        console.error('Error fetching types:', error);
+      }
+    };
+
+    fetchCardSets();
+    fetchRarities();
+    fetchTypes();
     fetchCards();
   }, []);
 
@@ -103,6 +143,15 @@ const Store: React.FC = () => {
     handleUserMenuClose();
   };
 
+  const filteredCards = cards.filter((card) => {
+    return (
+      (selectedSet ? card.set.id === selectedSet : true) && // ตรวจสอบการกรอง Set
+      (selectedRarity ? card.rarity === selectedRarity : true) && // ตรวจสอบการกรอง Rarity
+      (selectedType ? card.types.includes(selectedType) : true) // ตรวจสอบการกรอง Type
+    );
+  });
+
+
   return (
     <Container sx={{ backgroundColor: '#1a1a2e', minHeight: '100vh', minWidth: '100vw', padding: '20px' }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -133,10 +182,57 @@ const Store: React.FC = () => {
       {/* OrderModal Component */}
       <OrderModal open={modalOpen} onClose={() => setModalOpen(false)} />
 
+      {/* PokemonCardSearch Component */}
       <PokemonCardSearch addToCart={(card) => setCartItems((prev) => [...prev, { id: card.id, name: card.name, price: card.tcgplayer.prices?.normal?.market || 0, quantity: 1, image: card.images.large }])} />
 
+      {/* Select for Set, Rarity, and Type */}
+      <Box display="flex" justifyContent="center" mb={2}>
+        <FormControl sx={{ width: '200px', marginRight: '10px' }}>
+          <InputLabel>Set</InputLabel>
+          <Select
+            value={selectedSet}
+            onChange={(e) => setSelectedSet(e.target.value)}
+            label="Set"
+          >
+            <MuiMenuItem value="">All Sets</MuiMenuItem>
+            {cardSets.map((set) => (
+              <MuiMenuItem key={set.id} value={set.id}>{set.name}</MuiMenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <FormControl sx={{ width: '200px', marginRight: '10px' }}>
+          <InputLabel>Rarity</InputLabel>
+          <Select
+            value={selectedRarity}
+            onChange={(e) => setSelectedRarity(e.target.value)}
+            label="Rarity"
+          >
+            <MuiMenuItem value="">All Rarities</MuiMenuItem>
+            {rarities.map((rarity) => (
+              <MuiMenuItem key={rarity.name} value={rarity.name}>{rarity.name}</MuiMenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <FormControl sx={{ width: '200px' }}>
+          <InputLabel>Type</InputLabel>
+          <Select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
+            label="Type"
+          >
+            <MuiMenuItem value="">All Types</MuiMenuItem>
+            {types.map((type) => (
+              <MuiMenuItem key={type.name} value={type.name}>{type.name}</MuiMenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
+      {/* Product Grid */}
       <Grid container spacing={3} justifyContent="center">
-        {cards.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage).map((card) => (
+        {filteredCards.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage).map((card) => (
           <Grid item xs={6} sm={3} md={2} lg={2} key={card.id}>
             <ProductCard cardId={card.id} card={card} addToCart={(card) => setCartItems((prev) => [...prev, { id: card.id, name: card.name, price: card.tcgplayer.prices?.normal?.market || 0, quantity: 1, image: card.images.large }])} />
           </Grid>
@@ -144,16 +240,16 @@ const Store: React.FC = () => {
       </Grid>
 
       <Pagination
-        count={Math.ceil(cards.length / cardsPerPage)}
+        count={Math.ceil(filteredCards.length / cardsPerPage)}
         page={currentPage}
         onChange={handlePageChange}
         sx={{ display: 'flex', justifyContent: 'center', color: 'white', mt: 2 }}
       />
 
-      <Cart 
-        open={cartOpen} 
-        onClose={() => setCartOpen(false)} 
-        cartItems={cartItems} 
+      <Cart
+        open={cartOpen}
+        onClose={() => setCartOpen(false)}
+        cartItems={cartItems}
         updateQuantity={(id, quantity) => setCartItems((prev) => prev.map((item) => item.id === id ? { ...item, quantity } : item))}
         removeFromCart={(id) => setCartItems((prev) => prev.filter((item) => item.id !== id))}
         clearCart={() => setCartItems([])}
