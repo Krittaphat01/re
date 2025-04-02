@@ -183,7 +183,22 @@ const Store: React.FC = () => {
       <OrderModal open={modalOpen} onClose={() => setModalOpen(false)} />
 
       {/* PokemonCardSearch Component */}
-      <PokemonCardSearch addToCart={(card) => setCartItems((prev) => [...prev, { id: card.id, name: card.name, price: card.tcgplayer.prices?.normal?.market || 0, quantity: 1, image: card.images.large }])} />
+      <PokemonCardSearch 
+  addToCart={(card) => setCartItems((prev) => [
+    ...prev,
+    {
+      id: card.id,
+      name: card.name,
+      price: Math.max(
+        card.tcgplayer?.prices?.normal?.market ?? 0,
+        card.tcgplayer?.prices?.holofoil?.market ?? 0,
+        card.tcgplayer?.prices?.reverseHolofoil?.market ?? 0
+      ),
+      quantity: 1,
+      image: card.images.large
+    }
+  ])}
+/>
 
       {/* Select for Set, Rarity, and Type */}
       <Box display="flex" justifyContent="center" mb={2}>
