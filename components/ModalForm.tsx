@@ -24,16 +24,20 @@ interface CartItem {
 interface ModalFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (customerData: { 
-    name: string; 
-    address: string; 
-    phone: string;
-    email?: string;
+  onSubmit: (orderData: { 
+    customer: { 
+      name: string; 
+      address: string; 
+      phone: string;
+      email?: string;
+    };
+    status: string; // แยก status ออกมาเอง
   }) => Promise<void>;
   cartItems: CartItem[];
   currentUser: User | null;
-  onLoginRequest?: () => void; // เพิ่ม prop สำหรับการขอให้ล็อกอิน
+  onLoginRequest?: () => void;
 }
+
 
 const ModalForm: React.FC<ModalFormProps> = ({ 
   open, 
@@ -75,18 +79,24 @@ const ModalForm: React.FC<ModalFormProps> = ({
       }
       return;
     }
-
+  
     if (!formData.name || !formData.address || !formData.phone) {
       alert("กรุณากรอกข้อมูลให้ครบ");
       return;
     }
-
+  
     setIsSubmitting(true);
     try {
       await onSubmit({
-        ...formData,
-        email: currentUser.email ?? undefined, // ใช้ email จากผู้ใช้ที่ล็อกอินเท่านั้น
+        customer: {
+          name: formData.name,
+          address: formData.address,
+          phone: formData.phone,
+          email: currentUser.email ?? undefined,
+        },
+        status: "กำลังดำเนินการ", // ✅ แยก status ออกจาก customer
       });
+  
       setFormData({ name: "", address: "", phone: "" });
       onClose();
     } catch (error) {
@@ -96,6 +106,8 @@ const ModalForm: React.FC<ModalFormProps> = ({
       setIsSubmitting(false);
     }
   };
+  
+  
 
   const handleLoginClick = () => {
     if (onLoginRequest) {
