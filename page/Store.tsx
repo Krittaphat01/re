@@ -234,7 +234,20 @@ const Store: React.FC = () => {
       <Grid container spacing={3} justifyContent="center">
         {filteredCards.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage).map((card) => (
           <Grid item xs={6} sm={3} md={2} lg={2} key={card.id}>
-            <ProductCard cardId={card.id} card={card} addToCart={(card) => setCartItems((prev) => [...prev, { id: card.id, name: card.name, price: card.tcgplayer.prices?.normal?.market || 0, quantity: 1, image: card.images.large }])} />
+            <ProductCard
+              cardId={card.id}
+              addToCart={(selectedCard) => setCartItems((prev) => [
+                ...prev,
+                {
+                  id: selectedCard.id,
+                  name: selectedCard.name,
+                  price: selectedCard.price, // ใช้ price จาก ProductCard ที่ส่งออกมาแล้ว
+                  quantity: 1,
+                  image: selectedCard.images.large
+                }
+              ])}
+            />
+
           </Grid>
         ))}
       </Grid>
