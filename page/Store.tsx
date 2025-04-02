@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Grid, Typography, Box, Pagination, IconButton, Button, CircularProgress } from '@mui/material';
+import { 
+  Container, Grid, Typography, Box, Pagination, 
+  IconButton,  CircularProgress, Menu, MenuItem 
+} from '@mui/material';
 import axios from 'axios';
 import LocalMallOutlinedIcon from '@mui/icons-material/LocalMallOutlined';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import ProductCard from '../components/ProductCard';
 import PokemonCardSearch from '../components/PokemonCardSearch';
 import Cart from '../components/Cart';
@@ -38,9 +42,10 @@ const Store: React.FC = () => {
   const cardsPerPage = 20;
   const [modalOpen, setModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
 
-  // ตรวจสอบการเข้าสู่ระบบ หากไม่มีผู้ใช้จะนำไปที่หน้า Login
+  // ตรวจสอบสถานะผู้ใช้ ถ้าไม่ได้ล็อกอินให้ไปที่หน้า Login
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user) {
@@ -67,7 +72,6 @@ const Store: React.FC = () => {
     fetchCards();
   }, []);
 
-  // แสดง loading spinner ถ้ายังไม่ทราบสถานะผู้ใช้
   if (!currentUser) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
@@ -80,63 +84,60 @@ const Store: React.FC = () => {
     setCurrentPage(value);
   };
 
-  const indexOfLastCard = currentPage * cardsPerPage;
-  const indexOfFirstCard = indexOfLastCard - cardsPerPage;
-  const currentCards = cards.slice(indexOfFirstCard, indexOfLastCard);
-
-  const addToCart = (card: CardType) => {
-    setCartItems((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === card.id);
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.id === card.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [
-        ...prevCart,
-        { id: card.id, name: card.name, price: card.tcgplayer.prices?.normal?.market || 0, quantity: 1 }
-      ];
-    });
+  const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
-    setCartItems((prevCart) => prevCart.map((item) => item.id === id ? { ...item, quantity } : item));
+  const handleUserMenuClose = () => {
+    setAnchorEl(null);
   };
 
-  const removeFromCart = (id: string) => {
-    setCartItems((prevCart) => prevCart.filter((item) => item.id !== id));
+  const handleLogout = async () => {
+    await auth.signOut();
+    navigate('/login');
   };
 
-  const clearCart = () => {
-    setCartItems([]);
+  const handleOpenModal = () => {
+    setModalOpen(true);
+    handleUserMenuClose();
   };
-
-  const handleOpenModal = () => setModalOpen(true);
-  const handleCloseModal = () => setModalOpen(false);
 
   return (
     <Container sx={{ backgroundColor: '#1a1a2e', minHeight: '100vh', minWidth: '100vw', padding: '20px' }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h4" color="white">Pokemon Market</Typography>
-        <IconButton color="primary" onClick={() => setCartOpen(true)}>
-          <LocalMallOutlinedIcon sx={{ color: 'white' }} />
-        </IconButton>
-      </Box>
 
-      <PokemonCardSearch addToCart={addToCart} />
-      <Box display="flex" justifyContent="center" mt={3}>
-        <Button onClick={handleOpenModal} variant="contained" color="primary">
-          View Your Orders
-        </Button>
+        <Box display="flex" alignItems="center">
+          <IconButton color="primary" onClick={() => setCartOpen(true)}>
+            <LocalMallOutlinedIcon sx={{ color: 'red' }} />
+          </IconButton>
+
+          {/* User Icon */}
+          <IconButton color="primary" onClick={handleUserMenuOpen}>
+            <AccountCircleIcon sx={{ color: 'white' }} />
+          </IconButton>
+
+          {/* User Menu */}
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleUserMenuClose}
+          >
+            <MenuItem onClick={handleOpenModal}>View Your Orders</MenuItem>
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+          </Menu>
+        </Box>
       </Box>
 
       {/* OrderModal Component */}
-      <OrderModal open={modalOpen} onClose={handleCloseModal} />
+      <OrderModal open={modalOpen} onClose={() => setModalOpen(false)} />
+
+      <PokemonCardSearch addToCart={(card) => setCartItems((prev) => [...prev, { id: card.id, name: card.name, price: card.tcgplayer.prices?.normal?.market || 0, quantity: 1 }])} />
 
       <Grid container spacing={3} justifyContent="center">
-        {currentCards.map((card) => (
+        {cards.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage).map((card) => (
           <Grid item xs={6} sm={3} md={2} lg={2} key={card.id}>
-            <ProductCard cardId={card.id} card={card} addToCart={addToCart} />
+            <ProductCard cardId={card.id} card={card} addToCart={(card) => setCartItems((prev) => [...prev, { id: card.id, name: card.name, price: card.tcgplayer.prices?.normal?.market || 0, quantity: 1 }])} />
           </Grid>
         ))}
       </Grid>
@@ -152,9 +153,9 @@ const Store: React.FC = () => {
         open={cartOpen} 
         onClose={() => setCartOpen(false)} 
         cartItems={cartItems} 
-        updateQuantity={updateQuantity} 
-        removeFromCart={removeFromCart} 
-        clearCart={clearCart} 
+        updateQuantity={(id, quantity) => setCartItems((prev) => prev.map((item) => item.id === id ? { ...item, quantity } : item))}
+        removeFromCart={(id) => setCartItems((prev) => prev.filter((item) => item.id !== id))}
+        clearCart={() => setCartItems([])}
       />
     </Container>
   );
