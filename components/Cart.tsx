@@ -19,7 +19,7 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
-  image: string; // เพิ่มรูปสินค้า
+  image: string;
 }
 
 interface CartProps {
@@ -34,8 +34,6 @@ interface CartProps {
 const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, removeFromCart, clearCart }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [cartImages, setCartImages] = useState<{ [key: string]: string }>({});
-
-  // รวมสินค้าซ้ำกันให้เป็นหนึ่งรายการ
   const mergedCartItems = cartItems.reduce((acc: CartItem[], item) => {
     const existingItem = acc.find((cartItem) => cartItem.id === item.id);
     if (existingItem) {
@@ -45,8 +43,6 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
     }
     return acc;
   }, []);
-
-  // ฟังก์ชันสำหรับดึงข้อมูลรูปภาพจาก API
   const fetchCardImage = async (id: string) => {
     try {
       const response = await axios.get(`https://api.pokemontcg.io/v2/cards/${id}`, {
@@ -60,8 +56,6 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
       console.error("Error fetching card image: ", error);
     }
   };
-
-  // เรียกใช้ fetchCardImage เมื่อมีการเปลี่ยนแปลง cartItems
   useEffect(() => {
     mergedCartItems.forEach((item) => {
       if (!cartImages[item.id]) {
@@ -69,8 +63,6 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
       }
     });
   }, [cartItems, cartImages, mergedCartItems]);
-
-  // ฟังก์ชันสำหรับทำการชำระเงินและบันทึกคำสั่งซื้อ
   const handleCheckout = async (orderData: { customer: { name: string; address: string; phone: string; email?: string }; status: string }) => {
     try {
       const fullOrderData = {
@@ -92,7 +84,6 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
   const total = mergedCartItems.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2);
   const totalQuantity = mergedCartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-
   return (
     <>
       <Drawer anchor="right" open={open} onClose={onClose}>
@@ -104,7 +95,6 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
             backgroundColor: "#252836",
           }}
         >
-          {/* หัวข้อ Cart และปุ่มปิด */}
           <Grid container justifyContent="space-between" alignItems="center">
             <Typography variant="h4" color="white">
               Cart
@@ -126,8 +116,6 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
               <Typography variant="button">X</Typography>
             </ButtonBase>
           </Grid>
-
-          {/* ปุ่มล้างตะกร้า */}
           <Button
             variant="contained"
             color="error"
@@ -141,8 +129,6 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
           >
             Clear all
           </Button>
-
-          {/* แสดงสินค้าในตะกร้า */}
           {mergedCartItems.length === 0 ? (
             <Typography color="white" sx={{ mt: 2, marginBottom:55 }}>
               ตะกร้าว่างเปล่า
@@ -151,7 +137,6 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
             <Grid container spacing={2} sx={{ maxHeight: "500px", overflowY: "auto" }}>
               {mergedCartItems.map((item) => (
                 <Grid container spacing={2} direction="row" alignItems="center" justifyContent="space-between" key={item.id}>
-                  {/* รูปภาพสินค้า */}
                   <Grid item xs={4}>
                     <img
                       src={item.image}
@@ -165,15 +150,14 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
                       }}
                     />
                   </Grid>
-                  {/* ชื่อสินค้า และราคาต่อชิ้น */}
                   <Grid
                     item
                     xs={4}
                     display="flex"
                     justifyContent="center"
                     alignItems="center"
-                    flexDirection="column" // ให้ข้อความอยู่ในแนวตั้ง
-                    textAlign="center" // ให้ข้อความอยู่ตรงกลาง
+                    flexDirection="column" 
+                    textAlign="center" 
                   >
                     <Typography variant="body2" sx={{ color: "white" }}>
                       {item.name}
@@ -182,16 +166,11 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
                       ฿{item.price.toFixed(2)}
                     </Typography>
                   </Grid>
-
-
-                  {/* จำนวน และราคารวม */}
                   <Grid item xs={4}>
                     <Typography variant="body2" sx={{ color: "white", textAlign: "center" }}>
                       ฿{(item.price * item.quantity).toFixed(2)}
                     </Typography>
                   </Grid>
-
-                  {/* ปุ่มเพิ่ม/ลด จำนวน */}
                   <Grid item xs={12} sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 2, marginTop: 2 }}>
                     <Button onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1} size="small">
                       <Remove />
@@ -207,18 +186,13 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
                 </Grid>
               ))}
             </Grid>
-
           )}
-
-          {/* รวมจำนวนสินค้าและราคารวม */}
           <Typography variant="h6" color="white" sx={{ mt: 2 }}>
             Total Quantity: {totalQuantity}
           </Typography>
           <Typography variant="h6" color="white">
             Total: ฿{total}
           </Typography>
-
-          {/* ปุ่มชำระเงิน */}
           <ButtonBase
             sx={{
               width: "100%",
@@ -228,8 +202,8 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
               fontSize: "16px",
               boxShadow: "0px 6px 20px rgba(255, 99, 71, 0.8)",
               "&:hover": { backgroundColor: "#ff4500", transform: "translateY(-2px)" },
-              position: "static", // เพิ่มตำแหน่ง fixed
-              bottom: 10, // จัดให้ติดด้านล่าง
+              position: "static", 
+              bottom: 10, 
             }}
             onClick={() => setModalOpen(true)}
           >
@@ -238,8 +212,6 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
 
         </Box>
       </Drawer>
-
-      {/* Modal สำหรับบันทึกข้อมูลลูกค้า */}
       <ModalForm open={modalOpen} onClose={() => setModalOpen(false)} onSubmit={handleCheckout} cartItems={mergedCartItems} currentUser={auth.currentUser} />
     </>
   );
