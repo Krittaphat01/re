@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { TextField, Grid, Card, CardMedia, CardContent, Typography, Button, CircularProgress, Alert } from '@mui/material';
+import { TextField, Grid, Card, CardMedia, CardContent, Typography, Button, CircularProgress, Alert, Pagination } from '@mui/material';
 import axios from 'axios';
 import LocalMallOutlinedIcon from '@mui/icons-material/LocalMallOutlined';
 
@@ -14,7 +14,7 @@ interface CardType {
       reverseHolofoil?: { market: number };
     };
   };
-  price?: number; // Added price property
+  price?: number;
 }
 
 interface PokemonCardSearchProps {
@@ -26,10 +26,12 @@ const PokemonCardSearch: React.FC<PokemonCardSearchProps> = ({ addToCart }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 20;
 
   const fetchCards = useCallback(async (term: string) => {
     if (!term.trim()) {
-      setCards([]);
+      setCards([]); // 🔹 ล้างผลการค้นหาถ้าไม่มีค่าในช่องค้นหา
       setError(null);
       return;
     }
@@ -52,6 +54,7 @@ const PokemonCardSearch: React.FC<PokemonCardSearchProps> = ({ addToCart }) => {
       }));
 
       setCards(fetchedCards);
+      setPage(1); // Reset เป็นหน้าแรกเมื่อค้นหาใหม่
     } catch {
       setError('Failed to fetch cards. Please try again later.');
     } finally {
@@ -61,13 +64,21 @@ const PokemonCardSearch: React.FC<PokemonCardSearchProps> = ({ addToCart }) => {
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
-      if (searchTerm) {
+      if (searchTerm.trim()) {
         fetchCards(searchTerm);
+      } else {
+        setCards([]); // 🔹 ล้างข้อมูลถ้าช่องค้นหาว่าง
       }
     }, 500);
 
     return () => clearTimeout(delayDebounce);
   }, [searchTerm, fetchCards]);
+
+  const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
+  };
+
+  const paginatedCards = cards.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   return (
     <div style={{ padding: '20px' }}>
@@ -84,8 +95,8 @@ const PokemonCardSearch: React.FC<PokemonCardSearchProps> = ({ addToCart }) => {
       {error && <Alert severity="error" sx={{ margin: '20px auto', width: '80%' }}>{error}</Alert>}
 
       <Grid container spacing={3}>
-        {cards.map((card) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={card.id}>
+        {paginatedCards.map((card) => (
+          <Grid item xs={6} sm={3} md={2} lg={2} key={card.id}>
             <Card sx={{ maxWidth: 250, backgroundColor: 'transparent', boxShadow: 'none', textAlign: 'center' }}>
               <CardMedia
                 component="img"
@@ -93,7 +104,19 @@ const PokemonCardSearch: React.FC<PokemonCardSearchProps> = ({ addToCart }) => {
                 alt={card.name}
                 sx={{ width: '100%', height: 140, objectFit: 'contain', marginTop: '25px' }}
               />
-              <CardContent sx={{ backgroundColor: '#0b0c16', color: 'white', textAlign: 'center', borderRadius: '16px', padding: '1px' }}>
+              <CardContent sx={{
+                backgroundColor: '#0b0c16',
+                borderRadius: '16px',
+                padding: '8px',
+                color: 'white',
+                textAlign: 'center',
+                width: '160px',
+                height: '170px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                margin: '0 auto',
+              }}>
                 <Typography variant="body2" sx={{ fontWeight: 'bold', marginTop: '25px' }}>
                   {card.name}
                 </Typography>
@@ -106,13 +129,9 @@ const PokemonCardSearch: React.FC<PokemonCardSearchProps> = ({ addToCart }) => {
                   size="small"
                   sx={{
                     color: 'white',
-                    marginBottom: '10px',
                     backgroundColor: '#4F4F4F',
                     opacity: 0.7,
-                    '&:hover': {
-                      backgroundColor: '#3333FF',
-                      opacity: 1,
-                    },
+                    '&:hover': { backgroundColor: '#3333FF', opacity: 1 },
                   }}
                   onClick={() => addToCart(card)}
                 >
@@ -129,6 +148,16 @@ const PokemonCardSearch: React.FC<PokemonCardSearchProps> = ({ addToCart }) => {
         <Typography variant="h6" style={{ textAlign: 'center', marginTop: '20px' }}>
           No cards found for "{searchTerm}".
         </Typography>
+      )}
+
+      {cards.length > itemsPerPage && (
+        <Pagination
+          count={Math.ceil(cards.length / itemsPerPage)}
+          page={page}
+          onChange={handlePageChange}
+          color="primary"
+          sx={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}
+        />
       )}
     </div>
   );
