@@ -140,7 +140,6 @@ const Store: React.FC = () => {
       sx={{
         minHeight: '100%',
         minWidth: '100%',
-        background: 'linear-gradient(to bottom right,rgba(243, 164, 85, 0.53), #FFFFE0)', // ไล่สีจากซ้ายบนไปขวาล่าง
       }}
     >
 
