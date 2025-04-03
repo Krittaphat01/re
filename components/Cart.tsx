@@ -130,11 +130,11 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
             Clear all
           </Button>
           {mergedCartItems.length === 0 ? (
-            <Typography color="white" sx={{ mt: 2, marginBottom:55 }}>
+            <Typography color="white" sx={{ mt: 2,  }}>
               ตะกร้าว่างเปล่า
             </Typography>
           ) : (
-            <Grid container spacing={2} sx={{ maxHeight: "500px", overflowY: "auto" }}>
+            <Grid container spacing={2} sx={{ maxHeight: "430px", overflowY: "auto" }}>
               {mergedCartItems.map((item) => (
                 <Grid container spacing={2} direction="row" alignItems="center" justifyContent="space-between" key={item.id}>
                   <Grid item xs={4}>
@@ -203,7 +203,7 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
               boxShadow: "0px 6px 20px rgba(255, 99, 71, 0.8)",
               "&:hover": { backgroundColor: "#ff4500", transform: "translateY(-2px)" },
               position: "static", 
-              bottom: 10, 
+            
             }}
             onClick={() => setModalOpen(true)}
           >
