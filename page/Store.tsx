@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
-import { Container, Grid, Typography, Box, Pagination, IconButton,Badge, CircularProgress, Menu, MenuItem, Select, MenuItem as MuiMenuItem, FormControl, InputLabel } from '@mui/material';
+import { Container, Grid, Box, Pagination, IconButton, Badge, CircularProgress, Menu, MenuItem, Select, MenuItem as MuiMenuItem, FormControl, InputLabel } from '@mui/material';
 import axios from 'axios';
 import LocalMallOutlinedIcon from '@mui/icons-material/LocalMallOutlined';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -29,20 +29,19 @@ interface CardType {
   rarity: string;
   types: string[];
 }
-
 interface CartItem {
   id: string;
   name: string;
   price: number;
   quantity: number;
-  image: string; // Add image property
+  image: string;
 }
 
 const Store: React.FC = () => {
   const [cards, setCards] = useState<CardType[]>([]);
-  const [cardSets, setCardSets] = useState<any[]>([]); // State for sets
-  const [rarities, setRarities] = useState<any[]>([]); // State for rarities
-  const [types, setTypes] = useState<any[]>([]); // State for types
+  const [cardSets, setCardSets] = useState<any[]>([]);
+  const [rarities, setRarities] = useState<any[]>([]);
+  const [types, setTypes] = useState<any[]>([]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -51,12 +50,10 @@ const Store: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
+  const [selectedSet, setSelectedSet] = useState<string | ''>('');
+  const [selectedRarity, setSelectedRarity] = useState<string | ''>('');
+  const [selectedType, setSelectedType] = useState<string | ''>('');
 
-  const [selectedSet, setSelectedSet] = useState<string | ''>(''); // State for selected set
-  const [selectedRarity, setSelectedRarity] = useState<string | ''>(''); // State for selected rarity
-  const [selectedType, setSelectedType] = useState<string | ''>(''); // State for selected type
-
-  // ตรวจสอบสถานะผู้ใช้ ถ้าไม่ได้ล็อกอินให้ไปที่หน้า Login
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user) {
@@ -67,7 +64,6 @@ const Store: React.FC = () => {
     });
     return unsubscribe;
   }, [navigate]);
-
   useEffect(() => {
     const fetchCards = async () => {
       try {
@@ -79,7 +75,6 @@ const Store: React.FC = () => {
         console.error('Error fetching cards:', error);
       }
     };
-
     const fetchCardSets = async () => {
       try {
         const response = await axios.get('https://api.pokemontcg.io/v2/sets', { headers: { "X-api-key": "bffbe7c7-cf5c-4854-9b63-b51f85a3616c" } });
@@ -88,7 +83,6 @@ const Store: React.FC = () => {
         console.error('Error fetching card sets:', error);
       }
     };
-
     const fetchRarities = async () => {
       try {
         const response = await axios.get('https://api.pokemontcg.io/v2/rarities', { headers: { "X-api-key": "bffbe7c7-cf5c-4854-9b63-b51f85a3616c" } });
@@ -97,7 +91,6 @@ const Store: React.FC = () => {
         console.error('Error fetching rarities:', error);
       }
     };
-
     const fetchTypes = async () => {
       try {
         const response = await axios.get('https://api.pokemontcg.io/v2/types', { headers: { "X-api-key": "bffbe7c7-cf5c-4854-9b63-b51f85a3616c" } });
@@ -106,13 +99,11 @@ const Store: React.FC = () => {
         console.error('Error fetching types:', error);
       }
     };
-
     fetchCardSets();
     fetchRarities();
     fetchTypes();
     fetchCards();
   }, []);
-
   if (!currentUser) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
@@ -120,65 +111,57 @@ const Store: React.FC = () => {
       </Box>
     );
   }
-
   const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
     setCurrentPage(value);
   };
-
   const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
-
   const handleUserMenuClose = () => {
     setAnchorEl(null);
   };
-
   const handleLogout = async () => {
     await auth.signOut();
     navigate('/login');
   };
-
   const handleOpenModal = () => {
     setModalOpen(true);
     handleUserMenuClose();
   };
-
   const filteredCards = cards.filter((card) => {
     return (
-      (selectedSet ? card.set.id === selectedSet : true) && // ตรวจสอบการกรอง Set
-      (selectedRarity ? card.rarity === selectedRarity : true) && // ตรวจสอบการกรอง Rarity
-      (selectedType ? card.types.includes(selectedType) : true) // ตรวจสอบการกรอง Type
+      (selectedSet ? card.set.id === selectedSet : true) &&
+      (selectedRarity ? card.rarity === selectedRarity : true) &&
+      (selectedType ? card.types.includes(selectedType) : true)
     );
   });
-
-
   return (
-    <Container sx={{ minHeight: '100%', minWidth: '100%' }}>
+    <Container
+      sx={{
+        minHeight: '100%',
+        minWidth: '100%',
+        background: 'linear-gradient(to bottom right,rgba(243, 164, 85, 0.53), #FFFFE0)', // ไล่สีจากซ้ายบนไปขวาล่าง
+      }}
+    >
+
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h1" color="#FF4500" fontWeight={700}>
-          Pokemon Market
-        </Typography>
+        <Box component="img" src="/public/Group 5.png" alt="Pokemon Market Logo" sx={{ height: 100 }} />
         <Box
           display="flex"
           alignItems="center"
           position="fixed"
           right="16px"
           top="16px"
-          zIndex={1000} // ให้เมนูอยู่ด้านหน้าสุด
+          zIndex={1000}
         >
-          {/* Cart Icon */}
           <IconButton color="primary" onClick={() => setCartOpen(true)}>
             <Badge badgeContent={cartItems.length} color="error">
               <LocalMallOutlinedIcon sx={{ color: 'red', fontSize: 52 }} />
             </Badge>
           </IconButton>
-
-          {/* User Icon */}
           <IconButton color="primary" onClick={handleUserMenuOpen}>
             <AccountCircleIcon sx={{ color: '#3333FF', fontSize: 52 }} />
           </IconButton>
-
-          {/* User Menu */}
           <Menu
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
@@ -188,13 +171,8 @@ const Store: React.FC = () => {
             <MenuItem onClick={handleLogout}>Logout</MenuItem>
           </Menu>
         </Box>
-
       </Box>
-
-      {/* OrderModal Component */}
       <OrderModal open={modalOpen} onClose={() => setModalOpen(false)} />
-
-      {/* PokemonCardSearch Component */}
       <PokemonCardSearch
         addToCart={(card) => setCartItems((prev) => [
           ...prev,
@@ -211,8 +189,6 @@ const Store: React.FC = () => {
           }
         ])}
       />
-
-      {/* Select for Set, Rarity, and Type */}
       <Box display="flex" justifyContent="center" mb={2}>
         <FormControl sx={{ width: '200px', marginRight: '10px' }}>
           <InputLabel>Set</InputLabel>
@@ -256,8 +232,6 @@ const Store: React.FC = () => {
           </Select>
         </FormControl>
       </Box>
-
-      {/* Product Grid */}
       <Grid container spacing={3} justifyContent="center">
         {filteredCards.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage).map((card) => (
           <Grid item xs={6} sm={3} md={2} lg={2} key={card.id}>
@@ -268,24 +242,21 @@ const Store: React.FC = () => {
                 {
                   id: selectedCard.id,
                   name: selectedCard.name,
-                  price: selectedCard.price, // ใช้ price จาก ProductCard ที่ส่งออกมาแล้ว
+                  price: selectedCard.price,
                   quantity: 1,
                   image: selectedCard.images.large
                 }
               ])}
             />
-
           </Grid>
         ))}
       </Grid>
-
       <Pagination
         count={Math.ceil(filteredCards.length / cardsPerPage)}
         page={currentPage}
         onChange={handlePageChange}
         sx={{ display: 'flex', justifyContent: 'center', color: 'white', mt: 2 }}
       />
-
       <Cart
         open={cartOpen}
         onClose={() => setCartOpen(false)}
