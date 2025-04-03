@@ -21,11 +21,10 @@ const Login: React.FC = () => {
   const [currentImage, setCurrentImage] = useState(0);
   const navigate = useNavigate();
 
-  // เปลี่ยนภาพทุก 4 วินาที
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImage((prev) => (prev + 1) % images.length);
-    }, 4000);
+    }, 2000);
     return () => clearInterval(interval);
   }, []);
 
