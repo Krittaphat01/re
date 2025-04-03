@@ -144,34 +144,45 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
 
           {/* แสดงสินค้าในตะกร้า */}
           {mergedCartItems.length === 0 ? (
-            <Typography color="white" sx={{ mt: 2 }}>
+            <Typography color="white" sx={{ mt: 2, marginBottom:55 }}>
               ตะกร้าว่างเปล่า
             </Typography>
           ) : (
             <Grid container spacing={2} sx={{ maxHeight: "500px", overflowY: "auto" }}>
               {mergedCartItems.map((item) => (
-                <Grid container spacing={2} alignItems="center" key={item.id}>
+                <Grid container spacing={2} direction="row" alignItems="center" justifyContent="space-between" key={item.id}>
                   {/* รูปภาพสินค้า */}
-                  <Grid item xs={2}>
+                  <Grid item xs={4}>
                     <img
                       src={item.image}
                       alt={item.name}
                       style={{
-                        width: 100,
-                        height: 40,
-                        objectFit: "contain"
+                        width: 90,
+                        height: 120,
+                        objectFit: "fill",
+                        padding: 5,
+
                       }}
                     />
                   </Grid>
                   {/* ชื่อสินค้า และราคาต่อชิ้น */}
-                  <Grid item xs={4}>
-                    <Typography variant="body2" sx={{ color: "white", textAlign: "center" }}>
+                  <Grid
+                    item
+                    xs={4}
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    flexDirection="column" // ให้ข้อความอยู่ในแนวตั้ง
+                    textAlign="center" // ให้ข้อความอยู่ตรงกลาง
+                  >
+                    <Typography variant="body2" sx={{ color: "white" }}>
                       {item.name}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "gray", textAlign: "center" }}>
+                    <Typography variant="caption" sx={{ color: "gray" }}>
                       ฿{item.price.toFixed(2)}
                     </Typography>
                   </Grid>
+
 
                   {/* จำนวน และราคารวม */}
                   <Grid item xs={4}>
@@ -217,11 +228,14 @@ const Cart: React.FC<CartProps> = ({ open, onClose, cartItems, updateQuantity, r
               fontSize: "16px",
               boxShadow: "0px 6px 20px rgba(255, 99, 71, 0.8)",
               "&:hover": { backgroundColor: "#ff4500", transform: "translateY(-2px)" },
+              position: "static", // เพิ่มตำแหน่ง fixed
+              bottom: 10, // จัดให้ติดด้านล่าง
             }}
             onClick={() => setModalOpen(true)}
           >
             CONTINUE TO PAYMENT
           </ButtonBase>
+
         </Box>
       </Drawer>
 
