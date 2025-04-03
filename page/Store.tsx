@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
-import { Container, Grid, Typography, Box, Pagination, IconButton, CircularProgress, Menu, MenuItem, Select, MenuItem as MuiMenuItem, FormControl, InputLabel } from '@mui/material';
+import { Container, Grid, Typography, Box, Pagination, IconButton,Badge, CircularProgress, Menu, MenuItem, Select, MenuItem as MuiMenuItem, FormControl, InputLabel } from '@mui/material';
 import axios from 'axios';
 import LocalMallOutlinedIcon from '@mui/icons-material/LocalMallOutlined';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -153,18 +153,29 @@ const Store: React.FC = () => {
 
 
   return (
-    <Container sx={{ backgroundColor: '#1a1a2e', minHeight: '100vh', minWidth: '100vw', padding: '20px' }}>
+    <Container sx={{ minHeight: '100%', minWidth: '100%' }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h4" color="white">Pokemon Market</Typography>
-
-        <Box display="flex" alignItems="center">
+        <Typography variant="h1" color="#FF4500" fontWeight={700}>
+          Pokemon Market
+        </Typography>
+        <Box
+          display="flex"
+          alignItems="center"
+          position="fixed"
+          right="16px"
+          top="16px"
+          zIndex={1000} // ให้เมนูอยู่ด้านหน้าสุด
+        >
+          {/* Cart Icon */}
           <IconButton color="primary" onClick={() => setCartOpen(true)}>
-            <LocalMallOutlinedIcon sx={{ color: 'red' }} />
+            <Badge badgeContent={cartItems.length} color="error">
+              <LocalMallOutlinedIcon sx={{ color: 'red', fontSize: 52 }} />
+            </Badge>
           </IconButton>
 
           {/* User Icon */}
           <IconButton color="primary" onClick={handleUserMenuOpen}>
-            <AccountCircleIcon sx={{ color: 'white' }} />
+            <AccountCircleIcon sx={{ color: '#3333FF', fontSize: 52 }} />
           </IconButton>
 
           {/* User Menu */}
@@ -177,28 +188,29 @@ const Store: React.FC = () => {
             <MenuItem onClick={handleLogout}>Logout</MenuItem>
           </Menu>
         </Box>
+
       </Box>
 
       {/* OrderModal Component */}
       <OrderModal open={modalOpen} onClose={() => setModalOpen(false)} />
 
       {/* PokemonCardSearch Component */}
-      <PokemonCardSearch 
-  addToCart={(card) => setCartItems((prev) => [
-    ...prev,
-    {
-      id: card.id,
-      name: card.name,
-      price: Math.max(
-        card.tcgplayer?.prices?.normal?.market ?? 0,
-        card.tcgplayer?.prices?.holofoil?.market ?? 0,
-        card.tcgplayer?.prices?.reverseHolofoil?.market ?? 0
-      ),
-      quantity: 1,
-      image: card.images.large
-    }
-  ])}
-/>
+      <PokemonCardSearch
+        addToCart={(card) => setCartItems((prev) => [
+          ...prev,
+          {
+            id: card.id,
+            name: card.name,
+            price: Math.max(
+              card.tcgplayer?.prices?.normal?.market ?? 0,
+              card.tcgplayer?.prices?.holofoil?.market ?? 0,
+              card.tcgplayer?.prices?.reverseHolofoil?.market ?? 0
+            ),
+            quantity: 1,
+            image: card.images.large
+          }
+        ])}
+      />
 
       {/* Select for Set, Rarity, and Type */}
       <Box display="flex" justifyContent="center" mb={2}>
