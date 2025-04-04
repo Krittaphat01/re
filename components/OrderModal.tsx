@@ -18,13 +18,15 @@ interface Order {
     name: string;
     phone: string;
     address: string;
-    status?: string; 
+    status?: string;
   };
   items: OrderItem[];
   createdAt: Date;
-  // เพิ่ม status เป็น optional field
-  total: number; // Add total property to the Order interface
+  total: number;
+  shippingProvider?: string; // เพิ่มข้อมูลขนส่ง
+  trackingNumber?: string;   // เพิ่มเลขติดตามพัสดุ
 }
+
 
 const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, onClose }) => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -52,14 +54,11 @@ const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
         const ordersRef = collection(db, 'orders');
         const q = query(ordersRef, where('customer.email', '==', userEmail));
         const querySnapshot = await getDocs(q);
-    
+
         const ordersData: Order[] = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-    
-          // ตรวจสอบสถานะจาก Firestore และใช้ค่า 'ไม่พบ' หากสถานะไม่มีค่า
-          const status = data.status && data.status !== '' ? data.status : 'ไม่พบ';
-    
+
           ordersData.push({
             id: doc.id,
             customer: {
@@ -67,9 +66,8 @@ const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
               name: data.customer.name,
               phone: data.customer.phone,
               address: data.customer.address,
-              status: status,
+              status: data.status || 'ไม่พบ',
             },
-            
             items: data.items.map((item: any) => ({
               id: item.id,
               name: item.name,
@@ -77,12 +75,12 @@ const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
               quantity: item.quantity,
             })),
             createdAt: data.createdAt?.toDate() || new Date(),
-             // ใช้สถานะที่ตรวจสอบแล้ว
-            total: data.items.reduce((total: number, item: any) => total + item.price * item.quantity, 0), // คำนวณราคารวม
+            total: data.items.reduce((total: number, item: any) => total + item.price * item.quantity, 0),
+            shippingProvider: data.shippingProvider || 'N/A', // ดึงข้อมูลขนส่ง
+            trackingNumber: data.trackingNumber || 'N/A',     // ดึงเลขพัสดุ
           });
         });
-    
-        // เรียงลำดับตามวันที่ล่าสุด
+
         ordersData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
         setOrders(ordersData);
       } catch (err) {
@@ -92,8 +90,9 @@ const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
         setLoading(false);
       }
     };
-    
-    
+
+
+
     fetchOrders();
   }, [userEmail]);
 
@@ -153,12 +152,19 @@ const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
 
             <Typography variant="subtitle1" mb={1}>
               <strong>Status:</strong>
-              {/* ใช้สถานะจาก Firestore โดยตรง */}
               <Chip
                 label={order.customer.status}
-                color={order.customer.status ? 'success' : 'default'} // ใช้สีเขียวถ้ามีสถานะ
+                color={order.customer.status ? 'success' : 'default'}
                 sx={{ ml: 1, fontWeight: 'bold' }}
               />
+            </Typography>
+
+            {/* 🚀 แสดงข้อมูลขนส่ง */}
+            <Typography variant="subtitle1">
+              <strong>Shipping Provider:</strong> {order.shippingProvider}
+            </Typography>
+            <Typography variant="subtitle1" mb={1}>
+              <strong>Tracking Number:</strong> {order.trackingNumber}
             </Typography>
 
             <Divider sx={{ my: 1 }} />
@@ -190,6 +196,7 @@ const OrderModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
               </Typography>
             </Box>
           </Box>
+
         ))}
 
         <Box display="flex" justifyContent="flex-end" mt={2}>
