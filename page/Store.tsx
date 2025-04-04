@@ -140,6 +140,7 @@ const Store: React.FC = () => {
       sx={{
         minHeight: '100%',
         minWidth: '100%',
+
       }}
     >
 
@@ -188,7 +189,7 @@ const Store: React.FC = () => {
           }
         ])}
       />
-      <Box display="flex" justifyContent="center" mb={2}>
+      <Box display="flex" justifyContent="center" mb={2} alignItems="center">
         <FormControl sx={{ width: '200px', marginRight: '10px' }}>
           <InputLabel>Set</InputLabel>
           <Select
@@ -217,7 +218,7 @@ const Store: React.FC = () => {
           </Select>
         </FormControl>
 
-        <FormControl sx={{ width: '200px' }}>
+        <FormControl sx={{ width: '200px', marginRight: '10px' }}>
           <InputLabel>Type</InputLabel>
           <Select
             value={selectedType}
@@ -230,6 +231,19 @@ const Store: React.FC = () => {
             ))}
           </Select>
         </FormControl>
+
+        {/* ปุ่ม Clear Filters */}
+        <IconButton
+          color="primary"
+          onClick={() => {
+            setSelectedSet('');
+            setSelectedRarity('');
+            setSelectedType('');
+          }}
+          sx={{ ml: 2, bgcolor: 'error.main', color: 'white', '&:hover': { bgcolor: 'error.dark' } }}
+        >
+          Clear
+        </IconButton>
       </Box>
       <Grid container spacing={3} justifyContent="center">
         {filteredCards.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage).map((card) => (
